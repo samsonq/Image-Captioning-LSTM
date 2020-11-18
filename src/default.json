@@ -4,9 +4,9 @@
     "training_ids_file_path": "./train_ids.csv",
     "validation_ids_file_path": "./val_ids.csv",
     "test_ids_file_path": "./test_ids.csv",
-    "training_annotation_file_path": "./data/annotations/captions_train2014.json",
-    "test_annotation_file_path": "./data/annotations/captions_val2014.json",
-    "images_root_dir": "./data/images/",
+    "training_annotation_file_path": "../data/annotations/captions_train2014.json",
+    "test_annotation_file_path": "../data/annotations/captions_val2014.json",
+    "images_root_dir": "../data/images/",
     "vocabulary_threshold": 2,
     "img_size": 256,
     "batch_size": 64,
@@ -19,6 +19,8 @@
   "model": {
     "hidden_size": 512,
     "embedding_size": 300,
+    "neurons": 100,
+    "layers": 5,
     "model_type": "RNN"
   },
   "generation": {
