@@ -6,6 +6,20 @@
 
 from experiment import Experiment
 import sys
+import os
+import numpy as np
+import torch
+from file_utils import read_file
+
+config = read_file("./default.json")
+
+if torch.cuda.is_available():
+    print("Using CUDA")
+    device = torch.device("cuda")
+    extras = {"num_workers": config["dataset"]["num_workers"], "pin_memory": True}
+else:
+    device = torch.device("cpu")
+    extras = False
 
 # Main Driver for your code. Either run `python main.py` which will run the experiment with default config
 # or specify the configuration by running `python main.py custom`
