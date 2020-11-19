@@ -2,7 +2,11 @@
 import nltk
 from collections import Counter
 from pycocotools.coco import COCO
-import os, pickle, json, csv, copy
+import os
+import pickle
+import json
+import csv
+import copy
 
 
 # A simple wrapper class for Vocabulary. No changes are required in this file

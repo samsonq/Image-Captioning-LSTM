@@ -4,16 +4,29 @@
 # Fall 2020
 ################################################################################
 
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn as nn
 from datetime import datetime
-
 from caption_utils import *
 from constants import ROOT_STATS_DIR
 from dataset_factory import get_datasets
 from file_utils import *
 from model_factory import get_model
+import warnings
+
+warnings.filterwarnings("ignore")
+config = read_file("./default.json")
+
+if torch.cuda.is_available():
+    print("Using CUDA")
+    device = torch.device("cuda")
+    extras = {"num_workers": config["dataset"]["num_workers"], "pin_memory": True}
+else:
+    device = torch.device("cpu")
+    extras = False
 
 
 # Class to encapsulate a neural experiment.
@@ -44,9 +57,9 @@ class Experiment(object):
         # Init Model
         self.__model = get_model(config_data, self.__vocab)
 
-        # TODO: Set these Criterion and Optimizers Correctly
-        self.__criterion = None
-        self.__optimizer = None
+        self.__criterion = nn.CrossEntropyLoss()
+        params = list(self.__model[1].parameters()) + list(self.__model[0].fc.parameters()) #+ list(self.__model[0].bn.parameters())
+        self.__optimizer = torch.optim.Adam(params, lr=config_data["experiment"]["learning_rate"])
 
         self.__init_model()
 
@@ -88,17 +101,29 @@ class Experiment(object):
 
     # TODO: Perform one training iteration on the whole dataset and return loss value
     def __train(self):
-        self.__model.train()
+        self.__model[0].train()
+        self.__model[1].train()
         training_loss = 0
 
         for i, (images, captions, _) in enumerate(self.__train_loader):
-            raise NotImplementedError()
+            images = images.to(device)
+            captions = captions.to(device)
+            targets = torch.nn.utils.rnn.pack_padded_sequence(captions, _, batch_first=True)[0]
+
+            features = self.__model[0](images)
+            outputs = self.__model[1](features, captions, _)
+            loss = self.__criterion(outputs, targets)
+            self.__model[1].zero_grad()
+            self.__model[0].zero_grad()
+            loss.backward()
+            self.__optimizer.step()
 
         return training_loss
 
     # TODO: Perform one Pass on the validation set and return loss value. You may also update your best model here.
     def __val(self):
-        self.__model.eval()
+        self.__model[0].eval()
+        self.__model[1].eval()
         val_loss = 0
 
         with torch.no_grad():

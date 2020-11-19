@@ -14,14 +14,14 @@
   },
   "experiment": {
     "num_epochs": 10,
-    "learning_rate": 5e-4
+    "learning_rate": 5e-4,
+    "dropout": 0
   },
   "model": {
     "hidden_size": 512,
     "embedding_size": 300,
-    "neurons": 100,
     "layers": 5,
-    "model_type": "RNN"
+    "model_type": "LSTM"
   },
   "generation": {
     "max_length": 20,

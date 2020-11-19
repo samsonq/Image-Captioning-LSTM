@@ -9,17 +9,22 @@ import sys
 import os
 import numpy as np
 import torch
-from file_utils import read_file
+from torchvision import transforms
+from vocab import load_vocab
+import warnings
 
-config = read_file("./default.json")
+warnings.filterwarnings("ignore")
 
-if torch.cuda.is_available():
-    print("Using CUDA")
-    device = torch.device("cuda")
-    extras = {"num_workers": config["dataset"]["num_workers"], "pin_memory": True}
-else:
-    device = torch.device("cpu")
-    extras = False
+
+def prepare_data():
+    transform = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406),
+                             (0.229, 0.224, 0.225))])
+
+    vocab_wrapper = load_vocab(None, None)
+
 
 # Main Driver for your code. Either run `python main.py` which will run the experiment with default config
 # or specify the configuration by running `python main.py custom`
