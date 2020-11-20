@@ -74,7 +74,7 @@ class Experiment(object):
             self.__training_losses = read_file_in_dir(self.__experiment_dir, 'training_losses.txt')
             self.__val_losses = read_file_in_dir(self.__experiment_dir, 'val_losses.txt')
             self.__current_epoch = len(self.__training_losses)
-
+            # TODO: restructure multiple models
             state_dict = torch.load(os.path.join(self.__experiment_dir, 'latest_model.pt'))
             self.__model.load_state_dict(state_dict['model'])
             self.__optimizer.load_state_dict(state_dict['optimizer'])
@@ -84,7 +84,8 @@ class Experiment(object):
 
     def __init_model(self):
         if torch.cuda.is_available():
-            self.__model = self.__model.cuda().float()
+            self.__model[0] = self.__model[0].cuda().float()
+            self.__model[1] = self.__model[1].cuda().float()
             self.__criterion = self.__criterion.cuda()
 
     # Main method to run your experiment. Should be self-explanatory.
@@ -117,8 +118,9 @@ class Experiment(object):
             self.__model[0].zero_grad()
             loss.backward()
             self.__optimizer.step()
+            training_loss += loss.item()
 
-        return training_loss
+        return training_loss/len(self.__train_loader)
 
     # TODO: Perform one Pass on the validation set and return loss value. You may also update your best model here.
     def __val(self):

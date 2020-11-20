@@ -59,7 +59,7 @@ class Decoder(nn.Module):
         elif model_type == "RNN":
             self.decoder = nn.RNN(embed_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
         self.fc = nn.Linear(hidden_size, vocab_size)
-        self.init_weights()
+        self.initialize_weights()
 
     def initialize_weights(self):
         self.embed.weight.data.uniform_(-0.1, 0.1)
