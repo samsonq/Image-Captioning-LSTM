@@ -66,6 +66,7 @@ class Decoder(nn.Module):
         self.fc.weight.data.uniform_(-0.1, 0.1)
         self.fc.bias.data.fill_(0)
 
+    '''
     def forward(self, features, captions, lengths):
         embeddings = self.embed(captions)
         embeddings = torch.cat((features.unsqueeze(1), embeddings), 1)
@@ -73,7 +74,18 @@ class Decoder(nn.Module):
         hidden, _ = self.decoder(packed)
         outputs = self.fc(hidden[0])
         return outputs
-
+    '''
+    def forward(self, features, captions):
+        captions = captions[:,:-1] 
+        embeds = self.embed(captions)
+        
+        # Concatenating features to embedding
+        # torch.cat 3D tensors
+        inputs = torch.cat((features.unsqueeze(1), embeds), 1)
+        
+        out, hidden = self.decoder(inputs)
+        return self.fc(out)
+    
     def sample(self, features, states=None, samples=20):
         sampled_ids = []
         inputs = features.unsqueeze(1)
@@ -95,6 +107,6 @@ def get_model(vocab, config_data=config):
     model_type = config_data['model']['model_type']
 
     encoder = Encoder().to(device)
-    decoder = Decoder(vocab_size=vocab, embed_size=embedding_size,
+    decoder = Decoder(vocab_size=len(vocab), embed_size=embedding_size,
                       hidden_size=hidden_size, model_type=model_type).to(device)
     return [encoder, decoder]

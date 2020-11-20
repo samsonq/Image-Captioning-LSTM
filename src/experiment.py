@@ -55,7 +55,7 @@ class Experiment(object):
         self.__best_model = None  # Save your best model in this field and use this in test method.
 
         # Init Model
-        self.__model = get_model(config_data, self.__vocab)
+        self.__model = get_model(self.__vocab, config_data)
 
         self.__criterion = nn.CrossEntropyLoss()
         params = list(self.__model[1].parameters()) + list(self.__model[0].fc.parameters()) #+ list(self.__model[0].bn.parameters())
@@ -75,8 +75,10 @@ class Experiment(object):
             self.__val_losses = read_file_in_dir(self.__experiment_dir, 'val_losses.txt')
             self.__current_epoch = len(self.__training_losses)
             # TODO: restructure multiple models
-            state_dict = torch.load(os.path.join(self.__experiment_dir, 'latest_model.pt'))
-            self.__model.load_state_dict(state_dict['model'])
+            state_dict_encoder = torch.load(os.path.join(self.__experiment_dir, 'latest_model_encoder.pt'))
+            state_dict_decoder = torch.load(os.path.join(self.__experiment_dir, 'latest_model_decoder.pt'))
+            self.__model[0].load_state_dict(state_dict_encoder['model'])
+            self.__model[1].load_state_dict(state_dict_decoder['model'])
             self.__optimizer.load_state_dict(state_dict['optimizer'])
 
         else:
@@ -109,13 +111,15 @@ class Experiment(object):
         for i, (images, captions, _) in enumerate(self.__train_loader):
             images = images.to(device)
             captions = captions.to(device)
-            targets = torch.nn.utils.rnn.pack_padded_sequence(captions, _, batch_first=True)[0]
+            #targets = torch.nn.utils.rnn.pack_padded_sequence(captions, _, batch_first=True, enforce_sorted=False)[0]
 
-            features = self.__model[0](images)
-            outputs = self.__model[1](features, captions, _)
-            loss = self.__criterion(outputs, targets)
             self.__model[1].zero_grad()
             self.__model[0].zero_grad()
+            features = self.__model[0](images)
+            #outputs = self.__model[1](features, captions, _)
+            outputs = self.__model[1](features, captions)
+            #loss = self.__criterion(outputs, targets)
+            loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
             loss.backward()
             self.__optimizer.step()
             training_loss += loss.item()
@@ -130,9 +134,18 @@ class Experiment(object):
 
         with torch.no_grad():
             for i, (images, captions, _) in enumerate(self.__val_loader):
-                raise NotImplementedError()
+                images = images.to(device)
+                captions = captions.to(device)
+                #targets = torch.nn.utils.rnn.pack_padded_sequence(captions, _, batch_first=True, enforce_sorted=False)[0]
 
-        return val_loss
+                features = self.__model[0](images)
+                #outputs = self.__model[1](features, captions, _)
+                outputs = self.__model[1](features, captions)
+                #loss = self.__criterion(outputs, targets)
+                loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
+                val_loss += loss.item()
+
+        return val_loss/len(self.__val_loader)
 
     # TODO: Implement your test function here. Generate sample captions and evaluate loss and
     #  bleu scores using the best model. Use utility functions provided to you in caption_utils.
@@ -155,10 +168,14 @@ class Experiment(object):
         return test_loss, bleu1, bleu4
 
     def __save_model(self):
-        root_model_path = os.path.join(self.__experiment_dir, 'latest_model.pt')
-        model_dict = self.__model.state_dict()
-        state_dict = {'model': model_dict, 'optimizer': self.__optimizer.state_dict()}
-        torch.save(state_dict, root_model_path)
+        root_model_path_encoder = os.path.join(self.__experiment_dir, 'latest_model_encoder.pt')
+        root_model_path_decoder = os.path.join(self.__experiment_dir, 'latest_model_decoder.pt')
+        model_dict_encoder = self.__model[0].state_dict()
+        model_dict_decoder = self.__model[1].state_dict()
+        state_dict_encoder = {'model': model_dict_encoder, 'optimizer': self.__optimizer.state_dict()}
+        state_dict_decoder = {'model': model_dict_decoder, 'optimizer': self.__optimizer.state_dict()}
+        torch.save(state_dict_encoder, root_model_path_encoder)
+        torch.save(state_dict_decoder, root_model_path_decoder)
 
     def __record_stats(self, train_loss, val_loss):
         self.__training_losses.append(train_loss)
