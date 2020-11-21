@@ -66,17 +66,8 @@ class Decoder(nn.Module):
         self.fc.weight.data.uniform_(-0.1, 0.1)
         self.fc.bias.data.fill_(0)
 
-    '''
-    def forward(self, features, captions, lengths):
-        embeddings = self.embed(captions)
-        embeddings = torch.cat((features.unsqueeze(1), embeddings), 1)
-        packed = torch.nn.utils.rnn.pack_padded_sequence(embeddings, lengths, batch_first=True)
-        hidden, _ = self.decoder(packed)
-        outputs = self.fc(hidden[0])
-        return outputs
-    '''
     def forward(self, features, captions):
-        captions = captions[:,:-1] 
+        captions = captions[:, :-1]
         embeds = self.embed(captions)
         
         # Concatenating features to embedding
@@ -86,10 +77,10 @@ class Decoder(nn.Module):
         out, hidden = self.decoder(inputs)
         return self.fc(out)
     
-    def sample(self, features, states=None, samples=20):
+    def sample(self, inputs, states=None, sample_length=20):
         sampled_ids = []
-        inputs = features.unsqueeze(1)
-        for _ in tqdm(range(samples)):
+        inputs = inputs.unsqueeze(1)
+        for _ in tqdm(range(sample_length)):
             hidden, states = self.decoder(inputs, states)  # (batch_size, 1, hidden_size),
             outputs = self.fc(hidden.squeeze(1))  # (batch_size, vocab_size)
             predicted = outputs.max(1)[1]

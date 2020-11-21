@@ -10,7 +10,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from datetime import datetime
-from caption_utils import *
+from caption_utils import bleu1, bleu4
 from constants import ROOT_STATS_DIR
 from dataset_factory import get_datasets
 from file_utils import *
@@ -74,12 +74,11 @@ class Experiment(object):
             self.__training_losses = read_file_in_dir(self.__experiment_dir, 'training_losses.txt')
             self.__val_losses = read_file_in_dir(self.__experiment_dir, 'val_losses.txt')
             self.__current_epoch = len(self.__training_losses)
-            # TODO: restructure multiple models
             state_dict_encoder = torch.load(os.path.join(self.__experiment_dir, 'latest_model_encoder.pt'))
             state_dict_decoder = torch.load(os.path.join(self.__experiment_dir, 'latest_model_decoder.pt'))
             self.__model[0].load_state_dict(state_dict_encoder['model'])
             self.__model[1].load_state_dict(state_dict_decoder['model'])
-            self.__optimizer.load_state_dict(state_dict['optimizer'])
+            self.__optimizer.load_state_dict(state_dict_encoder['optimizer'])
 
         else:
             os.makedirs(self.__experiment_dir)
@@ -111,14 +110,10 @@ class Experiment(object):
         for i, (images, captions, _) in enumerate(self.__train_loader):
             images = images.to(device)
             captions = captions.to(device)
-            #targets = torch.nn.utils.rnn.pack_padded_sequence(captions, _, batch_first=True, enforce_sorted=False)[0]
-
             self.__model[1].zero_grad()
             self.__model[0].zero_grad()
             features = self.__model[0](images)
-            #outputs = self.__model[1](features, captions, _)
             outputs = self.__model[1](features, captions)
-            #loss = self.__criterion(outputs, targets)
             loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
             loss.backward()
             self.__optimizer.step()
@@ -136,12 +131,8 @@ class Experiment(object):
             for i, (images, captions, _) in enumerate(self.__val_loader):
                 images = images.to(device)
                 captions = captions.to(device)
-                #targets = torch.nn.utils.rnn.pack_padded_sequence(captions, _, batch_first=True, enforce_sorted=False)[0]
-
                 features = self.__model[0](images)
-                #outputs = self.__model[1](features, captions, _)
                 outputs = self.__model[1](features, captions)
-                #loss = self.__criterion(outputs, targets)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
                 val_loss += loss.item()
 
@@ -153,16 +144,41 @@ class Experiment(object):
     def test(self):
         self.__model.eval()
         test_loss = 0
-        bleu1 = 0
-        bleu4 = 0
+        bleu_1 = 0
+        bleu_4 = 0
+
+        def clean_sentence(o, loader):
+            sentence = ""
+            for idx in o:
+                if idx == 0:
+                    continue
+                if idx == 1:
+                    break
+                word = loader.dataset.vocab.idx2word[idx]
+                sentence = sentence + word + ' '
+            return sentence
 
         with torch.no_grad():
             for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
-                raise NotImplementedError()
+                images = images.to(device)
+                captions = captions.to(device)
+                features = self.__model[0](images).unsqueeze(1)
+                pred_caption = self.__model[1].sample(features)
+                pred_caption = clean_sentence(pred_caption, self.__test_loader)
+                bleu_1 += bleu1(captions, pred_caption)
+                bleu_4 += bleu4(captions, pred_caption)
 
+                outputs = self.__model[1](features, captions)
+                loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
+                test_loss += loss.item()
+
+        test_loss /= len(self.__test_loader)
+        bleu_1 /= len(self.__test_loader)
+        bleu_4 /= len(self.__test_loader)
         result_str = "Test Performance: Loss: {}, Perplexity: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
-                                                                                               bleu1,
-                                                                                               bleu4)
+                                                                                               1,
+                                                                                               bleu_1,
+                                                                                               bleu_4)
         self.__log(result_str)
 
         return test_loss, bleu1, bleu4
