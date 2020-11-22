@@ -15,6 +15,7 @@ from constants import ROOT_STATS_DIR
 from dataset_factory import get_datasets
 from file_utils import *
 from model_factory import get_model
+from tqdm import tqdm
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -137,48 +138,55 @@ class Experiment(object):
                 val_loss += loss.item()
 
         return val_loss/len(self.__val_loader)
+    
+    def clean_caption(self, pred_caption):
+        pred_caption = pred_caption[0].cpu().numpy()
+
+        sampled_caption = []
+        for word_id in pred_caption:
+            word = self.__vocab.idx2word[word_id].lower()
+            if word == '<start>' or word == '.':
+                continue
+            elif word == '<end>':
+                break
+            sampled_caption.append(word)
+        #return ' '.join(sampled_caption)
+        return sampled_caption
 
     # TODO: Implement your test function here. Generate sample captions and evaluate loss and
     #  bleu scores using the best model. Use utility functions provided to you in caption_utils.
     #  Note than you'll need image_ids and COCO object in this case to fetch all captions to generate bleu scores.
-    def test(self):
-        self.__model.eval()
+    def test(self, verbose=1):
+        self.__model[0].eval()
+        self.__model[1].eval()
         test_loss = 0
         bleu_1 = 0
         bleu_4 = 0
 
-        def clean_sentence(o, loader):
-            sentence = ""
-            for idx in o:
-                if idx == 0:
-                    continue
-                if idx == 1:
-                    break
-                word = loader.dataset.vocab.idx2word[idx]
-                sentence = sentence + word + ' '
-            return sentence
-
         with torch.no_grad():
-            for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
+            for iter, (images, captions, img_ids) in tqdm(enumerate(self.__test_loader), total=len(self.__test_loader)):
                 images = images.to(device)
                 captions = captions.to(device)
-                features = self.__model[0](images).unsqueeze(1)
-                pred_caption = self.__model[1].sample(features)
-                pred_caption = clean_sentence(pred_caption, self.__test_loader)
-                bleu_1 += bleu1(captions, pred_caption)
-                bleu_4 += bleu4(captions, pred_caption)
-
+                features = self.__model[0](images)
                 outputs = self.__model[1](features, captions)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
                 test_loss += loss.item()
+                
+                pred_caption = self.__model[1].sample(features)
+                pred_caption = self.clean_caption(pred_caption)
+                captions = self.clean_caption(captions)
+                if verbose:
+                    print('predicted caption:', ' '.join(pred_caption))
+                    print('actual caption:', ' '.join(captions))
+                bleu_1 += bleu1(captions, pred_caption)
+                bleu_4 += bleu4(captions, pred_caption)
 
         test_loss /= len(self.__test_loader)
         bleu_1 /= len(self.__test_loader)
         bleu_4 /= len(self.__test_loader)
-        result_str = "Test Performance: Loss: {}, Perplexity: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
-                                                                                               1,
-                                                                                               bleu_1,
-                                                                                               bleu_4)
+        result_str = "Test Performance: Loss: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
+                                                                               bleu_1,
+                                                                               bleu_4)
         self.__log(result_str)
 
         return test_loss, bleu1, bleu4

@@ -76,19 +76,21 @@ class Decoder(nn.Module):
         
         out, hidden = self.decoder(inputs)
         return self.fc(out)
-    
-    def sample(self, inputs, states=None, sample_length=20):
+
+    def sample(self, inputs, states=None, sample_length=config["generation"]["max_length"]):
         sampled_ids = []
         inputs = inputs.unsqueeze(1)
-        for _ in tqdm(range(sample_length)):
+        for _ in range(sample_length):
             hidden, states = self.decoder(inputs, states)  # (batch_size, 1, hidden_size),
             outputs = self.fc(hidden.squeeze(1))  # (batch_size, vocab_size)
             predicted = outputs.max(1)[1]
             sampled_ids.append(predicted)
             inputs = self.embed(predicted)
             inputs = inputs.unsqueeze(1)  # (batch_size, 1, embed_size)
-        sampled_ids = torch.cat(sampled_ids, 1)  # (batch_size, 20)
-        return sampled_ids.squeeze()
+        #sampled_ids = torch.cat(sampled_ids, 1)  # (batch_size, 20)
+        sampled_ids = torch.stack(sampled_ids, 1)
+        #return sampled_ids.squeeze()
+        return sampled_ids
 
 
 # Build and return the model here based on the configuration.
