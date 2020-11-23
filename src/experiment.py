@@ -178,6 +178,8 @@ class Experiment(object):
                 if verbose:
                     print('predicted caption:', ' '.join(pred_caption))
                     print('actual caption:', ' '.join(captions))
+                for _ in range(len(captions) - len(pred_caption)):
+                    pred_caption.append("")
                 bleu_1 += bleu1(captions, pred_caption)
                 bleu_4 += bleu4(captions, pred_caption)
 
