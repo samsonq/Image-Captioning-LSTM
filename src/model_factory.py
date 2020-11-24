@@ -11,7 +11,7 @@ from torchvision.models import resnet50
 from file_utils import read_file
 from tqdm import tqdm
 
-config = read_file("./default.json")
+config = read_file("./model_configs/default.json")
 
 if torch.cuda.is_available():
     print("Using CUDA")

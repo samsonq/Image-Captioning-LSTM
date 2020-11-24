@@ -19,7 +19,7 @@ from tqdm import tqdm
 import warnings
 
 warnings.filterwarnings("ignore")
-config = read_file("./default.json")
+config = read_file("./model_configs/default.json")
 
 if torch.cuda.is_available():
     print("Using CUDA")
