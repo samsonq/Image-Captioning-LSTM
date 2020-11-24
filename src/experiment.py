@@ -36,7 +36,7 @@ else:
 # You are free to modify or restructure the code as per your convenience.
 class Experiment(object):
     def __init__(self, name):
-        config_data = read_file_in_dir('./', name + '.json')
+        config_data = read_file_in_dir('./model_configs/', name + '.json')
         if config_data is None:
             raise Exception("Configuration file doesn't exist: ", name)
 
