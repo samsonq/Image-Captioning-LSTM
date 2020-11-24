@@ -139,19 +139,20 @@ class Experiment(object):
 
         return val_loss/len(self.__val_loader)
     
-    def clean_caption(self, pred_caption):
-        pred_caption = pred_caption[0].cpu().numpy()
-
-        sampled_caption = []
-        for word_id in pred_caption:
-            word = self.__vocab.idx2word[word_id].lower()
-            if word == '<start>' or word == '.':
-                continue
-            elif word == '<end>':
-                break
-            sampled_caption.append(word)
-        #return ' '.join(sampled_caption)
-        return sampled_caption
+    def clean_caption(self, unclean_captions):
+        unclean_captions = unclean_captions.cpu().numpy()
+        clean_captions = []
+        for cap in unclean_captions:
+            clean_cap = []
+            for word_id in cap:
+                word = self.__vocab.idx2word[int(word_id)].lower()
+                if word == '<start>' or word == '.' or word ==',' or word == ' ':
+                    continue
+                elif word == '<end>':
+                    break
+                clean_cap.append(word)
+            clean_captions.append(clean_cap)
+        return clean_captions
 
     # TODO: Implement your test function here. Generate sample captions and evaluate loss and
     #  bleu scores using the best model. Use utility functions provided to you in caption_utils.
@@ -171,21 +172,23 @@ class Experiment(object):
                 outputs = self.__model[1](features, captions)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
                 test_loss += loss.item()
-                
                 pred_caption = self.__model[1].sample(features)
                 pred_caption = self.clean_caption(pred_caption)
                 captions = self.clean_caption(captions)
                 if verbose:
-                    print('predicted caption:', ' '.join(pred_caption))
-                    print('actual caption:', ' '.join(captions))
+                    print('sample predicted caption:', ' '.join(pred_caption[0]))
+                    print('sample actual caption:', ' '.join(captions[0]))
                 for _ in range(len(captions) - len(pred_caption)):
                     pred_caption.append("")
-                bleu_1 += bleu1(captions, pred_caption)
-                bleu_4 += bleu4(captions, pred_caption)
+                for i in range(len(pred_caption)):
+                    pred = pred_caption[i]
+                    cap = [captions[i]]
+                    bleu_1 += bleu1(cap, pred)
+                    bleu_4 += bleu4(cap, pred)
 
         test_loss /= len(self.__test_loader)
-        bleu_1 /= len(self.__test_loader)
-        bleu_4 /= len(self.__test_loader)
+        bleu_1 /= len(self.__test_loader.dataset)
+        bleu_4 /= len(self.__test_loader.dataset)
         result_str = "Test Performance: Loss: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
                                                                                bleu_1,
                                                                                bleu_4)
