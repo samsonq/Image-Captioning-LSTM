@@ -146,7 +146,7 @@ class Experiment(object):
             clean_cap = []
             for word_id in cap:
                 word = self.__vocab.idx2word[int(word_id)].lower()
-                if word == '<start>' or word == '.' or word ==',' or word == ' ':
+                if word == '<start>':
                     continue
                 elif word == '<end>':
                     break
@@ -163,7 +163,6 @@ class Experiment(object):
         test_loss = 0
         bleu_1 = 0
         bleu_4 = 0
-
         with torch.no_grad():
             for iter, (images, captions, img_ids) in tqdm(enumerate(self.__test_loader), total=len(self.__test_loader)):
                 images = images.to(device)
