@@ -119,7 +119,6 @@ class Experiment(object):
             loss.backward()
             self.__optimizer.step()
             training_loss += loss.item()
-
         return training_loss/len(self.__train_loader)
 
     # TODO: Perform one Pass on the validation set and return loss value. You may also update your best model here.
@@ -171,7 +170,7 @@ class Experiment(object):
                 outputs = self.__model[1](features, captions)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
                 test_loss += loss.item()
-                pred_caption = self.__model[1].sample(features)
+                pred_caption = self.__model[1].deterministic_sample(features)
                 pred_caption = self.clean_caption(pred_caption)
                 captions = self.clean_caption(captions)
                 if verbose:

@@ -67,21 +67,22 @@ class Decoder(nn.Module):
         self.fc.bias.data.fill_(0)
 
     def forward(self, features, captions):
-        captions = captions[:, :-1]
+        captions = captions[:,:-1]
         embeds = self.embed(captions)
-        
-        # Concatenating features to embedding
-        # torch.cat 3D tensors
         inputs = torch.cat((features.unsqueeze(1), embeds), 1)
-        
         out, hidden = self.decoder(inputs)
         return self.fc(out)
 
-    def sample(self, inputs, states=None, sample_length=config["generation"]["max_length"]):
+    def deterministic_sample(self, features, states=None, sample_length=config["generation"]["max_length"]):
         sampled = None
-        inputs = inputs.unsqueeze(1)
-        for _ in range(sample_length):
-            hidden, states = self.decoder(inputs, states)  # (batch_size, 1, hidden_size),
+        states = None
+        inputs = features.unsqueeze(1)
+        #+2 to account for start and end tokens
+        for _ in range(sample_length+2):
+            if states is None:
+                hidden, states = self.decoder(inputs)
+            else:
+                hidden, states = self.decoder(inputs, states)  # (batch_size, 1, hidden_size),
             outputs = self.fc(hidden.squeeze(1))  # (batch_size, vocab_size)
             predicted = torch.argmax(outputs, dim=1).view(-1, 1)
             if sampled is None:
