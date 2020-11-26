@@ -171,7 +171,10 @@ class Experiment(object):
                 outputs = self.__model[1](features, captions)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
                 test_loss += loss.item()
-                pred_caption = self.__model[1].sample(features)
+                if self.__generation_config['deterministic']:
+                    pred_caption = self.__model[1].deterministic_sample(features)
+                else:
+                    pred_caption = self.__model[1].stochastic_sample(features)
                 pred_caption = self.clean_caption(pred_caption)
                 captions = self.clean_caption(captions)
                 if verbose:
@@ -184,7 +187,7 @@ class Experiment(object):
                     cap = [captions[i]]
                     bleu_1 += bleu1(cap, pred)
                     bleu_4 += bleu4(cap, pred)
-
+#                 break
         test_loss /= len(self.__test_loader)
         bleu_1 /= len(self.__test_loader.dataset)
         bleu_4 /= len(self.__test_loader.dataset)

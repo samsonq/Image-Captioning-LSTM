@@ -76,8 +76,26 @@ class Decoder(nn.Module):
         
         out, hidden = self.decoder(inputs)
         return self.fc(out)
-
-    def sample(self, inputs, states=None, sample_length=config["generation"]["max_length"]):
+    
+    def stochastic_sample(self, inputs, states=None, sample_length=config["generation"]["max_length"], temperature=config["generation"]["temperature"]):
+        sampled = None
+        inputs = inputs.unsqueeze(1)
+        for _ in range(sample_length):
+            hidden, states = self.decoder(inputs, states)  # (batch_size, 1, hidden_size),
+            outputs = self.fc(hidden.squeeze(1))  # (batch_size, vocab_size)
+            prob_dist = torch.nn.Softmax(dim = 1)(outputs)
+            c = prob_dist.cumsum(axis=1).double()
+            u = np.random.rand(len(c), 1)
+            choices = (torch.from_numpy(u).to('cuda').double() < c).argmax(axis=1)
+            predicted = choices.view(-1, 1)#torch.argmax(outputs, dim=1).view(-1, 1)
+            if sampled is None:
+                sampled = predicted
+            else:
+                sampled = torch.cat((sampled, predicted), dim=1)
+            inputs = self.embed(predicted)
+        return sampled
+    
+    def deterministic_sample(self, inputs, states=None, sample_length=config["generation"]["max_length"]):
         sampled = None
         inputs = inputs.unsqueeze(1)
         for _ in range(sample_length):
