@@ -15,10 +15,10 @@ from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 # Converting to lower case, Removing tokens like <start>, <end>, padding etc.
 
 def bleu1(reference_captions, predicted_caption):
-    return 100 * sentence_bleu(reference_captions, predicted_caption,
+    return sentence_bleu(reference_captions, predicted_caption,
                                weights=(1, 0, 0, 0), smoothing_function=SmoothingFunction().method1)
 
 
 def bleu4(reference_captions, predicted_caption):
-    return 100 * sentence_bleu(reference_captions, predicted_caption,
+    return sentence_bleu(reference_captions, predicted_caption,
                                weights=(0, 0, 0, 1), smoothing_function=SmoothingFunction().method1)

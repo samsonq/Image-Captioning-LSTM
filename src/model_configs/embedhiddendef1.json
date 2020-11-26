@@ -1,5 +1,5 @@
 {
-  "experiment_name": "embedhiddendef",
+  "experiment_name": "embedhiddendef1",
   "dataset": {
     "training_ids_file_path": "./train_ids.csv",
     "validation_ids_file_path": "./val_ids.csv",
@@ -18,7 +18,7 @@
     "dropout": 0
   },
   "model": {
-    "hidden_size": 512,
+    "hidden_size": 560,
     "embedding_size": 300,
     "layers": 5,
     "model_type": "LSTM"
@@ -26,6 +26,6 @@
   "generation": {
     "max_length": 20,
     "deterministic": false,
-    "temperature": 2
+    "temperature": 0.1
   }
 }
