@@ -182,6 +182,7 @@ class Experiment(object):
                 caps = [[re.findall(r'\b\w+\b|\S', cap_id['caption'].lower()) for cap_id in cap_i] for cap_i in caps]
                 if verbose:
                     plt.imshow(images[10].cpu().permute(1, 2, 0))
+                    plt.axis("off")
                     plt.show()
                     plt.close()
                     print('sample predicted caption:', ' '.join(pred_caption[10]))

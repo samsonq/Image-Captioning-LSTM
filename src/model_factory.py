@@ -81,12 +81,10 @@ class Decoder(nn.Module):
         for _ in range(sample_length):
             hidden, states = self.decoder(inputs, states)  # (batch_size, 1, hidden_size),
             outputs = self.fc(hidden.squeeze(1))  # (batch_size, vocab_size)
-            outputs = outputs / temperature
-            outputs = outputs - torch.max(outputs, axis = 1).values.view(-1, 1)
             choices = []
-            for p in torch.exp(outputs)/torch.sum(torch.exp(outputs), axis = 1).view(-1, 1):
-                choices.append(np.random.choice(np.arange(p.shape[0]), p = p.cpu().numpy()))
-            predicted = torch.tensor(choices).to(device).view(-1, 1)#torch.argmax(outputs, dim=1).view(-1, 1)
+            prob_dist = torch.nn.functional.softmax(outputs/temperature, dim = 1).cpu().numpy()
+            choices = np.apply_along_axis(lambda p: np.random.choice(np.arange(p.shape[0]), p = p), axis = 1, arr = prob_dist)
+            predicted = torch.from_numpy(choices).to(device).view(-1, 1)
             if sampled is None:
                 sampled = predicted
             else:
