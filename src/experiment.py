@@ -171,6 +171,7 @@ class Experiment(object):
                 outputs = self.__model[1](features, captions)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
                 test_loss += loss.item()
+                print(self.__generation_config['deterministic'])
                 if self.__generation_config['deterministic']:
                     pred_caption = self.__model[1].deterministic_sample(features)
                 else:
@@ -178,13 +179,27 @@ class Experiment(object):
                 pred_caption = self.clean_caption(pred_caption)
                 captions = self.clean_caption(captions)
                 if verbose:
-                    print('sample predicted caption:', ' '.join(pred_caption[0]))
-                    print('sample actual caption:', ' '.join(captions[0]))
-                for _ in range(len(captions) - len(pred_caption)):
-                    pred_caption.append("")
+                    plt.imshow(images[10].cpu().permute(1, 2, 0))
+                    plt.show()
+                    plt.close()
+                    print('sample predicted caption:', ' '.join(pred_caption[10]))
+                    print('sample actual caption:', ' '.join(captions[10]))
                 for i in range(len(pred_caption)):
+                    cap = captions[i]
                     pred = pred_caption[i]
-                    cap = [captions[i]]
+                    max_len = config["generation"]["max_length"]
+                    cap = [cap[:max_len]]
+                    pred = pred
+                    bleu_1 += bleu1(cap, pred)
+                    bleu_4 += bleu4(cap, pred)
+                for i in range(len(pred_caption)):
+                    cap = list(filter(lambda x: x not in ['', ' '], captions[i]))
+                    pred = list(filter(lambda x: x not in ['', ' '], pred_caption[i]))
+                    max_len = config["generation"]["max_length"]
+                    cap = [cap[:max_len]]
+                    pred = pred
+#                     print(cap)
+#                     print(pred)
                     bleu_1 += bleu1(cap, pred)
                     bleu_4 += bleu4(cap, pred)
 #                 break

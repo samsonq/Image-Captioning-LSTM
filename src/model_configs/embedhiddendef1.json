@@ -14,7 +14,7 @@
   },
   "experiment": {
     "num_epochs": 10,
-    "learning_rate": 5e-4,
+    "learning_rate": 5e-3,
     "dropout": 0
   },
   "model": {
@@ -26,6 +26,6 @@
   "generation": {
     "max_length": 20,
     "deterministic": false,
-    "temperature": 0.1
+    "temperature": 2
   }
 }

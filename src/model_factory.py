@@ -88,10 +88,6 @@ class Decoder(nn.Module):
             choices = []
             for p in torch.exp(outputs)/torch.sum(torch.exp(outputs), axis = 1).view(-1, 1):
                 choices.append(np.random.choice(np.arange(p.shape[0]), p = p.cpu().numpy()))
-#             prob_dist = torch.exp(outputs)/torch.sum(torch.exp(outputs), axis = 1).view(-1, 1)
-#             c = prob_dist.cumsum(axis=1).double()
-#             u = np.random.rand(len(c), 1)
-#             choices = (torch.from_numpy(u).to('cuda').double() < c).argmax(axis=1)
             predicted = torch.tensor(choices).to(device).view(-1, 1)#torch.argmax(outputs, dim=1).view(-1, 1)
             if sampled is None:
                 sampled = predicted
