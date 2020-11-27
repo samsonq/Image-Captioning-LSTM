@@ -17,6 +17,7 @@ from file_utils import *
 from model_factory import get_model
 from tqdm import tqdm
 import warnings
+import re
 
 warnings.filterwarnings("ignore")
 config = read_file("./model_configs/default.json")
@@ -146,7 +147,7 @@ class Experiment(object):
             clean_cap = []
             for word_id in cap:
                 word = self.__vocab.idx2word[int(word_id)].lower()
-                if word == '<start>':
+                if word == '<start>' or word == '<pad>' or word == '<unk>':
                     continue
                 elif word == '<end>':
                     break
@@ -163,6 +164,7 @@ class Experiment(object):
         test_loss = 0
         bleu_1 = 0
         bleu_4 = 0
+        points = 0
         with torch.no_grad():
             for iter, (images, captions, img_ids) in tqdm(enumerate(self.__test_loader), total=len(self.__test_loader)):
                 images = images.to(device)
@@ -171,41 +173,29 @@ class Experiment(object):
                 outputs = self.__model[1](features, captions)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
                 test_loss += loss.item()
-                print(self.__generation_config['deterministic'])
                 if self.__generation_config['deterministic']:
                     pred_caption = self.__model[1].deterministic_sample(features)
                 else:
                     pred_caption = self.__model[1].stochastic_sample(features)
                 pred_caption = self.clean_caption(pred_caption)
-                captions = self.clean_caption(captions)
+                caps = [self.__coco_test.imgToAnns[img_id] for img_id in img_ids]
+                caps = [[re.findall(r'\b\w+\b|\S', cap_id['caption'].lower()) for cap_id in cap_i] for cap_i in caps]
                 if verbose:
                     plt.imshow(images[10].cpu().permute(1, 2, 0))
                     plt.show()
                     plt.close()
                     print('sample predicted caption:', ' '.join(pred_caption[10]))
-                    print('sample actual caption:', ' '.join(captions[10]))
+                    for cap in caps[10]:
+                        print('sample actual caption:', ' '.join(cap))
                 for i in range(len(pred_caption)):
-                    cap = captions[i]
+                    cap = caps[i]
                     pred = pred_caption[i]
-                    max_len = config["generation"]["max_length"]
-                    cap = [cap[:max_len]]
-                    pred = pred
                     bleu_1 += bleu1(cap, pred)
                     bleu_4 += bleu4(cap, pred)
-                for i in range(len(pred_caption)):
-                    cap = list(filter(lambda x: x not in ['', ' '], captions[i]))
-                    pred = list(filter(lambda x: x not in ['', ' '], pred_caption[i]))
-                    max_len = config["generation"]["max_length"]
-                    cap = [cap[:max_len]]
-                    pred = pred
-#                     print(cap)
-#                     print(pred)
-                    bleu_1 += bleu1(cap, pred)
-                    bleu_4 += bleu4(cap, pred)
-#                 break
+                    points+= 1
         test_loss /= len(self.__test_loader)
-        bleu_1 /= len(self.__test_loader.dataset)
-        bleu_4 /= len(self.__test_loader.dataset)
+        bleu_1 /= points
+        bleu_4 /= points
         result_str = "Test Performance: Loss: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
                                                                                bleu_1,
                                                                                bleu_4)

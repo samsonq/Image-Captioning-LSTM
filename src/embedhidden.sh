@@ -1,0 +1,11 @@
+#python main.py baseline
+#python main.py embeddinghidden1
+#python main.py embeddinghidden2
+#python main.py embeddinghidden3
+#python main.py embeddinghidden4
+#python main.py embeddinghidden5
+#python main.py embeddinghidden6
+python main.py embeddinghidden7
+python main.py embeddinghidden8
+python main.py embeddinghidden9
+python main.py embeddinghidden10

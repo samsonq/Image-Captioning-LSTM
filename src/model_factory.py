@@ -31,7 +31,6 @@ class Encoder(nn.Module):
 
         self.resnet = nn.Sequential(*list(resnet.children())[:-1])
         self.fc = nn.Linear(resnet.fc.in_features, embed_size)
-        #self.bn = nn.BatchNorm1d(embed_size, momentum=0.01)  Batch Normalization
         self.initialize_weights()
 
     def initialize_weights(self):
@@ -40,7 +39,6 @@ class Encoder(nn.Module):
 
     def forward(self, images):
         features = self.resnet(images)
-        #features = torch.autograd.Variable(features.data)
         features = features.view(features.size(0), -1)
         features = self.fc(features)
         return features
@@ -113,11 +111,17 @@ class Decoder(nn.Module):
 
 # Build and return the model here based on the configuration.
 def get_model(vocab, config_data=config):
+    vocab_size = len(vocab)
     hidden_size = config_data['model']['hidden_size']
     embedding_size = config_data['model']['embedding_size']
     model_type = config_data['model']['model_type']
+    layers_size = config_data['model']['layers']
+    hidden_sizes = config["model"]["hidden_size"]
+    model_type=config["model"]["model_type"]
+    dropout = config["experiment"]["dropout"]
 
-    encoder = Encoder().to(device)
-    decoder = Decoder(vocab_size=len(vocab), embed_size=embedding_size,
-                      hidden_size=hidden_size, model_type=model_type).to(device)
+    encoder = Encoder(embed_size = embedding_size).to(device)
+    decoder = Decoder(vocab_size=vocab_size, embed_size=embedding_size,
+                      num_layers = layers_size, 
+                      hidden_size=hidden_size, model_type=model_type, dropout = dropout).to(device)
     return [encoder, decoder]
