@@ -68,14 +68,16 @@ class Decoder(nn.Module):
         self.fc.bias.data.fill_(0)
 
     def forward(self, features, captions):
-        captions = captions[:, :-1]
-        embeds = self.embed(captions)
         
         if self.model_type == "LSTM" or self.model_type == "RNN": 
+            captions = captions[:, 1:-1] # don't want <pad> and <exit>
+            embeds = self.embed(captions)
             # Concatenating features to embedding
             # torch.cat 3D tensors
             inputs = torch.cat((features.unsqueeze(1), embeds), 1)
         elif self.model_type == "LSTM2":
+            captions = captions[:, :-1]
+            embeds = self.embed(captions)
             inputs = torch.cat(
                 (torch.cat(
                     ([features.unsqueeze(1)]*embeds.size()[1]), 1), 

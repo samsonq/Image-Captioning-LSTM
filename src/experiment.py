@@ -137,6 +137,9 @@ class Experiment(object):
             for i, (images, captions, _) in enumerate(self.__val_loader):
                 images = images.to(device)
                 captions = captions.to(device)
+                pad_tensor = torch.cat(([torch.LongTensor([0])]*captions.size()[0]), 0).unsqueeze(1)
+                pad_tensor = pad_tensor.to(device)
+                captions = torch.cat((pad_tensor, captions), 1)
                 features = self.__model[0](images)
                 outputs = self.__model[1](features, captions)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
@@ -173,6 +176,9 @@ class Experiment(object):
             for iter, (images, captions, img_ids) in tqdm(enumerate(self.__test_loader), total=len(self.__test_loader)):
                 images = images.to(device)
                 captions = captions.to(device)
+                pad_tensor = torch.cat(([torch.LongTensor([0])]*captions.size()[0]), 0).unsqueeze(1)
+                pad_tensor = pad_tensor.to(device)
+                captions = torch.cat((pad_tensor, captions), 1)
                 features = self.__model[0](images)
                 outputs = self.__model[1](features, captions)
                 loss = self.__criterion(outputs.view(-1, len(self.__vocab)), captions.view(-1))
