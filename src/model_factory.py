@@ -52,10 +52,13 @@ class Decoder(nn.Module):
                  dropout=config["experiment"]["dropout"]):
         super(Decoder, self).__init__()
         self.embed = nn.Embedding(vocab_size, embed_size)
+        self.model_type = model_type
         if model_type == "LSTM":
             self.decoder = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
         elif model_type == "RNN":
             self.decoder = nn.RNN(embed_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
+        elif model_type == "LSTM2":
+            self.decoder = nn.LSTM(2*embed_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
         self.fc = nn.Linear(hidden_size, vocab_size)
         self.initialize_weights()
 
@@ -67,9 +70,16 @@ class Decoder(nn.Module):
     def forward(self, features, captions):
         captions = captions[:, :-1]
         embeds = self.embed(captions)
-        # Concatenating features to embedding
-        # torch.cat 3D tensors
-        inputs = torch.cat((features.unsqueeze(1), embeds), 1)
+        
+        if self.model_type == "LSTM" or self.model_type == "RNN": 
+            # Concatenating features to embedding
+            # torch.cat 3D tensors
+            inputs = torch.cat((features.unsqueeze(1), embeds), 1)
+        elif self.model_type == "LSTM2":
+            inputs = torch.cat(
+                (torch.cat(
+                    ([features.unsqueeze(1)]*embeds.size()[1]), 1), 
+                 embeds), 2)
         
         out, hidden = self.decoder(inputs)
         return self.fc(out)
