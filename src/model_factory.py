@@ -70,12 +70,16 @@ class Decoder(nn.Module):
     def forward(self, features, captions):
         
         if self.model_type == "LSTM" or self.model_type == "RNN": 
-            captions = captions[:, 1:-1] # don't want <pad> and <exit>
+            captions = captions[:, :-1] 
             embeds = self.embed(captions)
             # Concatenating features to embedding
             # torch.cat 3D tensors
             inputs = torch.cat((features.unsqueeze(1), embeds), 1)
         elif self.model_type == "LSTM2":
+            #adding pad
+            pad_tensor = torch.cat(([torch.LongTensor([0])]*captions.size()[0]), 0).unsqueeze(1)
+            pad_tensor = pad_tensor.to(device)
+            captions = torch.cat((pad_tensor, captions), 1)
             captions = captions[:, :-1]
             embeds = self.embed(captions)
             inputs = torch.cat(
