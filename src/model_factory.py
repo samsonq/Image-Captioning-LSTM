@@ -67,7 +67,6 @@ class Decoder(nn.Module):
     def forward(self, features, captions):
         captions = captions[:, :-1]
         embeds = self.embed(captions)
-        
         # Concatenating features to embedding
         # torch.cat 3D tensors
         inputs = torch.cat((features.unsqueeze(1), embeds), 1)
