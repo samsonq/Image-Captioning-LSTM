@@ -47,9 +47,7 @@ class Experiment(object):
         # Load Datasets
         self.__coco_test, self.__vocab, self.__train_loader, self.__val_loader, self.__test_loader = get_datasets(
             config_data)
-        
-        print("ID of <pad>")
-        print(self.__vocab.word2idx['<pad>'])
+       
 
         # Setup Experiment
         self.__generation_config = config_data['generation']
@@ -117,10 +115,7 @@ class Experiment(object):
             captions = captions.to(device)
             pad_tensor = torch.cat(([torch.LongTensor([0])]*captions.size()[0]), 0).unsqueeze(1)
             pad_tensor = pad_tensor.to(device)
-#             print("Type", captions.dtype, pad_tensor.dtype)
             captions = torch.cat((pad_tensor, captions), 1)
-#             print(captions[0])
-#             exit()
             self.__model[1].zero_grad()
             self.__model[0].zero_grad()
             features = self.__model[0](images)
