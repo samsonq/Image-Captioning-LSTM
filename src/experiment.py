@@ -113,9 +113,6 @@ class Experiment(object):
         for i, (images, captions, _) in enumerate(self.__train_loader):
             images = images.to(device)
             captions = captions.to(device)
-#             pad_tensor = torch.cat(([torch.LongTensor([0])]*captions.size()[0]), 0).unsqueeze(1)
-#             pad_tensor = pad_tensor.to(device)
-#             captions = torch.cat((pad_tensor, captions), 1)
             self.__model[1].zero_grad()
             self.__model[0].zero_grad()
             features = self.__model[0](images)
