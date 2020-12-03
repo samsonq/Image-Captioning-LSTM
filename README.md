@@ -1,15 +1,53 @@
-# Image Captioning
+# CSE 151B PA4!
 
-* TODO: Details specific to the student's implementation to be added by the student 
+This PA was completed by Siddharth Saha, Shubham Kaushal, Samson Qian and Alejandro Fosado. In this PA we implement an encoder and decoder setup using 2 primary architectures. The architectures are detailed in our report. To run an experiment with an architecture you need to follow the below format and put it in a .json file
 
-## Usage
+## Format
 
-* Define the configuration for your experiment. See `default.json` to see the structure and available options. You are free to modify and restructure the configuration as per your needs.
-* Implement factories to return project specific models, datasets based on config. Add more flags as per requirement in the config.
-* Implement `experiment.py` based on the project requirements.
-* After defining the configuration (say `my_exp.json`) - simply run `python3 main.py my_exp` to start the experiment
-* The logs, stats, plots and saved models would be stored in `./experiment_data/my_exp` dir. This can be configured in `contants.py`
-* To resume an ongoing experiment, simply run the same command again. It will load the latest stats and models and resume training pr evaluate performance.
+{
+#Name of the experiment. This will generate a folder with the same name under experiment_data
+  "experiment_name": "baseline",
+  #Links to the datasets. You can update this to reflect your paths and choices depending on computer specifications
+  "dataset": {
+    "training_ids_file_path": "./train_ids.csv",
+    "validation_ids_file_path": "./val_ids.csv",
+    "test_ids_file_path": "./test_ids.csv",
+    "training_annotation_file_path": "./data/annotations/captions_train2014.json",
+    "test_annotation_file_path": "./data/annotations/captions_val2014.json",
+    "images_root_dir": "./data/images/",
+    "vocabulary_threshold": 2,
+    "img_size": 256,
+    "batch_size": 64,
+    "num_workers": 8
+  },
+  #Some of our core hyperparameters. Adjust to your choosing
+  "experiment": {
+    "num_epochs": 10,
+    "learning_rate": 5e-4,
+    "dropout": 0
+  },
+  #Same as above. Importantly model type has 3 choices: LSTM, LSTM2 and RNN. Anything else will give an error
+  "model": {
+    "hidden_size": 512,
+    "embedding_size": 300,
+    "layers": 1,
+    "model_type": "LSTM"
+  },
+  #Controls how the captions get generated. Temperature won't matter if you have deterministic as true
+  "generation": {
+    "max_length": 20,
+    "deterministic": true,
+    "temperature": 0
+  }
+}
+
+## How to run
+Say you saved a json file as new_file.json
+
+Just say python main.py new_file
+
+A folder will generated under experiment_data in which you can see your performance and the training process results. If you want to see the some visualizations while testing you can run this in a notebook instead by saying !python main.py new_file and it should show you pictures, actual captions and our predicted caption after training
+
 
 ## Files
 - main.py: Main driver class
