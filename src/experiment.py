@@ -194,7 +194,7 @@ class Experiment(object):
                     pred = pred_caption[i]
                     bleu_1 += bleu1(cap, pred)
                     bleu_4 += bleu4(cap, pred)
-                    points+= 1
+                    points += 1
         test_loss /= len(self.__test_loader)
         bleu_1 /= points
         bleu_4 /= points

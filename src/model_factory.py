@@ -9,7 +9,6 @@ import torch
 import torch.nn as nn
 from torchvision.models import resnet50
 from file_utils import read_file
-from tqdm import tqdm
 
 config = read_file("./model_configs/default.json")
 
@@ -97,8 +96,8 @@ class Decoder(nn.Module):
             hidden, states = self.decoder(inputs, states)  # (batch_size, 1, hidden_size),
             outputs = self.fc(hidden.squeeze(1))  # (batch_size, vocab_size)
             choices = []
-            prob_dist = torch.nn.functional.softmax(outputs/temperature, dim = 1).cpu().numpy()
-            choices = np.apply_along_axis(lambda p: np.random.choice(np.arange(p.shape[0]), p = p), axis = 1, arr = prob_dist)
+            prob_dist = torch.nn.functional.softmax(outputs/temperature, dim=1).cpu().numpy()
+            choices = np.apply_along_axis(lambda p: np.random.choice(np.arange(p.shape[0]), p=p), axis=1, arr=prob_dist)
             predicted = torch.from_numpy(choices).to(device).view(-1, 1)
             if sampled is None:
                 sampled = predicted
@@ -130,11 +129,14 @@ def get_model(vocab, config_data=config):
     model_type = config_data['model']['model_type']
     layers_size = config_data['model']['layers']
     hidden_sizes = config["model"]["hidden_size"]
-    model_type=config["model"]["model_type"]
+    model_type = config["model"]["model_type"]
     dropout = config["experiment"]["dropout"]
 
-    encoder = Encoder(embed_size = embedding_size).to(device)
-    decoder = Decoder(vocab_size=vocab_size, embed_size=embedding_size,
-                      num_layers = layers_size, 
-                      hidden_size=hidden_size, model_type=model_type, dropout = dropout).to(device)
+    encoder = Encoder(embed_size=embedding_size).to(device)
+    decoder = Decoder(vocab_size=vocab_size,
+                      embed_size=embedding_size,
+                      num_layers=layers_size,
+                      hidden_size=hidden_size,
+                      model_type=model_type,
+                      dropout=dropout).to(device)
     return [encoder, decoder]
