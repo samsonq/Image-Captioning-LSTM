@@ -1,4 +1,4 @@
-# CSE 151B PA4!
+# Image Captioning w/ LSTM Encoder-Decoder
 
 This PA was completed by Siddharth Saha, Shubham Kaushal, Samson Qian and Alejandro Fosado. In this PA we implement an encoder and decoder setup using 2 primary architectures. The architectures are detailed in our report. To run an experiment with an architecture you need to follow the below format and put it in a .json file
 
